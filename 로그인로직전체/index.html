@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI 테스트 페이지</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+            padding: 25px;
+        }
+        .card h2 {
+            margin-top: 0;
+            color: #007bff;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="email"], input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #get-me-button {
+            background-color: #28a745;
+        }
+        #get-me-button:hover {
+            background-color: #218838;
+        }
+        #response {
+            background-color: #282c34; /* 다크 모드 배경 */
+            color: #f1f1f1; /* 밝은 텍스트 */
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre-wrap; /* 줄바꿈 및 공백 유지 */
+            word-wrap: break-word; /* 긴 줄 자동 줄바꿈 */
+            font-family: "Courier New", Courier, monospace;
+            font-size: 14px;
+            min-height: 100px;
+            border: 1px solid #444;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>FastAPI 테스트 페이지</h1>
+
+        <div class="card">
+            <h2>[미션 1, 2] 회원가입 (/users/)</h2>
+            <form id="signup-form">
+                <div class="form-group">
+                    <label for="signup-email">이메일:</label>
+                    <input type="email" id="signup-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">비밀번호:</label>
+                    <input type="password" id="signup-password" required>
+                </div>
+                <button type="submit">회원가입</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>[미션 3] 로그인 (/login)</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">이메일 (username):</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">비밀번호:</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit">로그인 (토큰 발급)</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>[미션 4] 내 정보 가져오기 (/users/me)</h2>
+            <button id="get-me-button">내 정보 요청 (Access Token 필요)</button>
+        </div>
+
+        <div class="card">
+            <h2>서버 응답</h2>
+            <pre id="response">여기에 서버 응답이 표시됩니다.</pre>
+        </div>
+    </div>
+
+    <script>
+        // API 서버 주소
+        const API_URL = "http://127.0.0.1:8000";
+
+        // Access Token을 저장할 변수
+        let accessToken = null;
+
+        // 응답을 표시할 DOM 요소
+        const responseEl = document.getElementById('response');
+
+        // 응답을 예쁘게 출력하는 헬퍼 함수
+        function showResponse(data, status) {
+            const prettyJson = JSON.stringify(data, null, 4); // null, 4는 JSON을 예쁘게 들여쓰기
+            responseEl.textContent = `[상태 코드: ${status}]\n\n${prettyJson}`;
+        }
+
+        // 1. 회원가입 폼 제출 이벤트
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault(); // 폼의 기본 제출 동작(새로고침) 방지
+
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+
+            try {
+                const res = await fetch(`${API_URL}/users/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                showResponse(data, res.status);
+
+            } catch (error) {
+                showResponse({ error: error.message }, '네트워크 오류');
+            }
+        });
+
+        // 2. 로그인 폼 제출 이벤트
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            // FastAPI의 OAuth2PasswordRequestForm은 'application/x-www-form-urlencoded' 형식을 사용합니다.
+            const formData = new URLSearchParams();
+            formData.append('username', email); // 백엔드에서 username 필드로 받음
+            formData.append('password', password);
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        // 'Content-Type'은 URLSearchParams를 사용할 때 브라우저가 자동으로 설정합니다.
+                    },
+                    body: formData
+                });
+
+                const data = await res.json();
+                showResponse(data, res.status);
+
+                if (res.ok) {
+                    // 로그인이 성공하면 Access Token을 변수에 저장
+                    accessToken = data.access_token;
+                    alert('로그인 성공! Access Token이 저장되었습니다.');
+                } else {
+                    accessToken = null;
+                }
+            } catch (error) {
+                showResponse({ error: error.message }, '네트워크 오류');
+            }
+        });
+
+        // 3. 내 정보 가져오기 버튼 클릭 이벤트
+        document.getElementById('get-me-button').addEventListener('click', async () => {
+            if (!accessToken) {
+                alert('먼저 로그인을 해서 Access Token을 발급받아야 합니다.');
+                showResponse({ detail: "Access Token이 없습니다." }, 401);
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/users/me`, {
+                    method: 'GET',
+                    headers: {
+                        // JWT 토큰을 'Authorization' 헤더에 담아 보냅니다.
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                const data = await res.json();
+                showResponse(data, res.status);
+
+            } catch (error) {
+                showResponse({ error: error.message }, '네트워크 오류');
+            }
+        });
+
+    </script>
+</body>
+</html>
