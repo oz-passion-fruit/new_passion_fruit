@@ -60,12 +60,12 @@ else:
 import asyncio
 from app.db.database import init_db
 from app.db.models.question import Question
-from app.schemas.question import QuestionInSchema
+from app.schemas.question import QuestionOutSchema   # 질문 응답 스키마
 
 async def save_questions_to_db():
     await init_db()
     for question_data in all_questions_data: # all_questions_data를 사용
-        await Question.create(**question_data.model_dump())
+        await Question.create(**QuestionOutSchema.model_dump(question_data))    
     print("데이터베이스에 질문 저장 완료")
 
 if __name__ == "__main__":

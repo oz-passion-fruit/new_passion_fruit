@@ -1,8 +1,17 @@
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options  # Options -> 클래스
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time
+
+# webdriver-manager 임포트
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service # Service 클래스도 필요
 
 from bs4 import BeautifulSoup
 from app.schemas.quotes import QuoteCreateInSchema 
@@ -12,7 +21,8 @@ url = "https://quotes.toscrape.com/"
 option_ = Options()
 option_.add_experimental_option("detach", True)
 
-driver = webdriver.Chrome(options=option_)
+# ChromeDriverManager를 사용하여 자동으로 드라이버 설치 및 경로 설정
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=option_)
 driver.get(url) 
 time.sleep(1)
 
@@ -57,7 +67,7 @@ driver.quit()
 import asyncio
 from app.db.database import init_db
 from app.db.models.quotes import Quote
-from app.schemas.quotes import QuoteInSchema
+from app.schemas.quotes import QuoteCreateInSchema
 
 async def save_quotes_to_db():
     await init_db()
