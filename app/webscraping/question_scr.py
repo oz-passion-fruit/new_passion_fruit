@@ -7,8 +7,6 @@ url = "https://steemit.com/kr/@centering/1010"
 
 all_questions_data = []
 
-print("스팀잇 페이지에서 질문을 가져오는 중...")
-
 # requests를 사용하여 페이지 가져오기 (Selenium보다 간단하고 빠름)
 headers = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
