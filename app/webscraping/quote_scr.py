@@ -5,7 +5,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 
 from bs4 import BeautifulSoup
-from app.schemas.quotes import QuoteInSchema 
+from app.schemas.quotes import QuoteCreateSchema 
 
 url = "https://quotes.toscrape.com/"
 
@@ -32,7 +32,7 @@ while True:
         content = item.select_one(".text").text
         author = item.select_one(".author").text
 
-        all_quotes_data.append(QuoteInSchema(content=content, author=author))
+        all_quotes_data.append(QuoteCreateSchema(content=content, author=author))
         
         print(f'내용 : {content}')
         print(f'작가 : {author}')

@@ -1,7 +1,7 @@
 import requests
 import re
 from bs4 import BeautifulSoup
-from app.schemas.question import QuestionInSchema 
+from app.schemas.question import QuestionCreateSchema 
 
 url = "https://steemit.com/kr/@centering/1010"
 
@@ -49,7 +49,7 @@ if response.status_code == 200:
             any('\uac00' <= char <= '\ud7a3' for char in question_text)):  # 한글 포함 확인
             
             question_count += 1
-            all_questions_data.append(QuestionInSchema(question=question_text))
+            all_questions_data.append(QuestionCreateSchema(question=question_text))
             print(f'{question_count}. {question_text[:100]}{"..." if len(question_text) > 100 else ""}')
     
     print(f"\n총 {len(all_questions_data)}개의 질문을 수집했습니다.")
