@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>명언 - Passion Fruit</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container fade-in">
+        <header>
+            <h1>🍊 Passion Fruit</h1>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="diary.html">일기</a>
+                <a href="question.html">질문</a>
+                <a href="quote.html">명언</a>
+            </nav>
+            <div class="user-info" id="user-info" style="display: none;">
+                <span class="user-email" id="user-email"></span>
+                <button class="btn btn-secondary" onclick="authAPI.logout()">로그아웃</button>
+            </div>
+            <div id="auth-links" style="display: flex; gap: 10px;">
+                <a href="auth.html" class="btn btn-primary">로그인</a>
+            </div>
+        </header>
+
+        <main>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
+                <h2 style="color: #667eea; font-size: 2.5em;">✨ 오늘의 명언</h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="author-filter" class="btn btn-secondary" style="padding: 10px 15px;" onchange="filterByAuthor()">
+                        <option value="">모든 작가</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadRandomQuote()">
+                        🔄 새로운 명언
+                    </button>
+                </div>
+            </div>
+
+            <!-- 랜덤 명언 -->
+            <div id="random-quote" class="loading">명언을 불러오는 중...</div>
+
+            <!-- 명언 목록 -->
+            <section style="margin-top: 60px;">
+                <h3 style="color: #667eea; font-size: 2em; margin-bottom: 20px;">모든 명언</h3>
+                <div style="text-align: right; margin-bottom: 20px;">
+                    <span id="quote-count" style="color: #999;"></span>
+                </div>
+                <div id="quotes-list" class="grid"></div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-secondary" onclick="loadMoreQuotes()" id="load-more-btn">
+                        더 보기
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let currentSkip = 0;
+        const limit = 12;
+        let selectedAuthor = null;
+
+        // 페이지 로드 시
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadRandomQuote();
+            await loadQuoteCount();
+            await loadAuthors();
+            await loadQuotes();
+        });
+
+        // 랜덤 명언 로드
+        async function loadRandomQuote() {
+            try {
+                const quote = await quoteAPI.getRandom();
+                const randomQuoteDiv = document.getElementById('random-quote');
+                randomQuoteDiv.innerHTML = `
+                    <div class="quote-card fade-in">
+                        <div class="quote-text">"${quote.content}"</div>
+                        ${quote.author ? `<div class="quote-author">- ${quote.author}</div>` : ''}
+                        <div style="margin-top: 30px; text-align: center;">
+                            <p style="opacity: 0.9; font-size: 0.9em;">
+                                이 명언에서 영감을 받아 일기를 작성해보세요
+                            </p>
+                            <a href="diary.html" class="btn" style="background: rgba(255,255,255,0.3); color: white; margin-top: 15px;">
+                                일기 쓰기 →
+                            </a>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('random-quote').innerHTML = 
+                    '<p style="color: #999;">명언을 불러올 수 없습니다.</p>';
+            }
+        }
+
+        // 명언 개수 로드
+        async function loadQuoteCount() {
+            try {
+                const data = await quoteAPI.getCount();
+                document.getElementById('quote-count').textContent = 
+                    `총 ${data.total}개의 명언`;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // 작가 목록 로드
+        async function loadAuthors() {
+            try {
+                const authors = await quoteAPI.getAuthors();
+                const authorFilter = document.getElementById('author-filter');
+                
+                authors.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.author;
+                    option.textContent = item.author;
+                    authorFilter.appendChild(option);
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // 작가 필터링
+        function filterByAuthor() {
+            selectedAuthor = document.getElementById('author-filter').value || null;
+            currentSkip = 0;
+            document.getElementById('load-more-btn').style.display = 'block';
+            loadQuotes();
+        }
+
+        // 명언 목록 로드
+        async function loadQuotes() {
+            try {
+                const quotes = await quoteAPI.getAll(currentSkip, limit, selectedAuthor);
+                const quotesList = document.getElementById('quotes-list');
+
+                if (quotes.length === 0 && currentSkip === 0) {
+                    quotesList.innerHTML = '<p style="color: #999;">아직 등록된 명언이 없습니다.</p>';
+                    return;
+                }
+
+                const quotesHTML = quotes.map(quote => `
+                    <div class="card fade-in">
+                        <div class="card-content" style="font-size: 1.1em; color: #333; font-style: italic;">
+                            "${quote.content}"
+                        </div>
+                        ${quote.author ? `
+                            <div class="card-meta">
+                                <span style="font-weight: 500; color: #667eea;">- ${quote.author}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+
+                if (currentSkip === 0) {
+                    quotesList.innerHTML = quotesHTML;
+                } else {
+                    quotesList.innerHTML += quotesHTML;
+                }
+
+                // 더 보기 버튼 표시/숨김
+                if (quotes.length < limit) {
+                    document.getElementById('load-more-btn').style.display = 'none';
+                }
+            } catch (error) {
+                showError('명언을 불러올 수 없습니다: ' + error.message);
+            }
+        }
+
+        // 더 많은 명언 로드
+        async function loadMoreQuotes() {
+            currentSkip += limit;
+            await loadQuotes();
+        }
+    </script>
+</body>
+</html>
+

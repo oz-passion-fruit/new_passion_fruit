@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passion Fruit - 나의 감정 일기</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container fade-in">
+        <header>
+            <h1>🍊 Passion Fruit</h1>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="diary.html">일기</a>
+                <a href="question.html">질문</a>
+                <a href="quote.html">명언</a>
+            </nav>
+            <div class="user-info" id="user-info" style="display: none;">
+                <span class="user-email" id="user-email"></span>
+                <button class="btn btn-secondary" onclick="authAPI.logout()">로그아웃</button>
+            </div>
+            <div id="auth-links" style="display: flex; gap: 10px;">
+                <a href="auth.html" class="btn btn-primary">로그인</a>
+            </div>
+        </header>
+
+        <main>
+            <section style="text-align: center; padding: 60px 20px;">
+                <h2 style="font-size: 3em; color: #667eea; margin-bottom: 20px;">
+                    나만의 감정 일기
+                </h2>
+                <p style="font-size: 1.3em; color: #666; margin-bottom: 40px; line-height: 1.8;">
+                    매일의 생각과 감정을 기록하고,<br>
+                    오늘의 질문과 명언으로 영감을 받아보세요.
+                </p>
+                
+                <div style="display: flex; gap: 20px; justify-content: center; margin-top: 40px;">
+                    <a href="diary.html" class="btn btn-primary" style="font-size: 1.2em; padding: 15px 30px;">
+                        일기 쓰기
+                    </a>
+                    <button class="btn btn-secondary" onclick="loadRandomContent()" style="font-size: 1.2em; padding: 15px 30px;">
+                        오늘의 영감
+                    </button>
+                </div>
+            </section>
+
+            <!-- 오늘의 질문 -->
+            <section id="today-question" style="margin-top: 40px;">
+                <h3 style="color: #667eea; font-size: 2em; margin-bottom: 20px;">💭 오늘의 질문</h3>
+                <div id="question-content" class="loading">질문을 불러오는 중...</div>
+            </section>
+
+            <!-- 오늘의 명언 -->
+            <section id="today-quote" style="margin-top: 40px;">
+                <h3 style="color: #667eea; font-size: 2em; margin-bottom: 20px;">✨ 오늘의 명언</h3>
+                <div id="quote-content" class="loading">명언을 불러오는 중...</div>
+            </section>
+
+            <!-- 최근 일기 -->
+            <section id="recent-diaries" style="margin-top: 40px;">
+                <h3 style="color: #667eea; font-size: 2em; margin-bottom: 20px;">📖 최근 일기</h3>
+                <div id="diaries-content" class="grid"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        // 랜덤 질문 로드
+        async function loadRandomQuestion() {
+            try {
+                const question = await questionAPI.getRandom();
+                const questionContent = document.getElementById('question-content');
+                questionContent.innerHTML = `
+                    <div class="question-card fade-in">
+                        <div class="question-text">${question.question}</div>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('question-content').innerHTML = 
+                    '<p style="color: #999;">질문을 불러올 수 없습니다.</p>';
+            }
+        }
+
+        // 랜덤 명언 로드
+        async function loadRandomQuote() {
+            try {
+                const quote = await quoteAPI.getRandom();
+                const quoteContent = document.getElementById('quote-content');
+                quoteContent.innerHTML = `
+                    <div class="quote-card fade-in">
+                        <div class="quote-text">"${quote.content}"</div>
+                        ${quote.author ? `<div class="quote-author">- ${quote.author}</div>` : ''}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('quote-content').innerHTML = 
+                    '<p style="color: #999;">명언을 불러올 수 없습니다.</p>';
+            }
+        }
+
+        // 최근 일기 로드
+        async function loadRecentDiaries() {
+            try {
+                const diaries = await diaryAPI.getAllDiaries(0, 6);
+                const diariesContent = document.getElementById('diaries-content');
+                
+                if (diaries.length === 0) {
+                    diariesContent.innerHTML = '<p style="color: #999; text-align: center;">아직 작성된 일기가 없습니다.</p>';
+                    return;
+                }
+
+                diariesContent.innerHTML = diaries.map(diary => `
+                    <div class="card fade-in">
+                        <div class="card-title">${diary.title}</div>
+                        <div class="card-content">${diary.content.substring(0, 100)}${diary.content.length > 100 ? '...' : ''}</div>
+                        <div class="card-meta">
+                            <span>${formatDate(diary.created_at)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('diaries-content').innerHTML = 
+                    '<p style="color: #999;">일기를 불러올 수 없습니다.</p>';
+            }
+        }
+
+        // 모든 컨텐츠 새로고침
+        async function loadRandomContent() {
+            await Promise.all([
+                loadRandomQuestion(),
+                loadRandomQuote()
+            ]);
+            showSuccess('새로운 영감을 불러왔습니다!');
+        }
+
+        // 페이지 로드 시 실행
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadRandomQuestion();
+            await loadRandomQuote();
+            await loadRecentDiaries();
+        });
+    </script>
+</body>
+</html>
+

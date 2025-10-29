@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일기 - Passion Fruit</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container fade-in">
+        <header>
+            <h1>🍊 Passion Fruit</h1>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="diary.html">일기</a>
+                <a href="question.html">질문</a>
+                <a href="quote.html">명언</a>
+            </nav>
+            <div class="user-info" id="user-info" style="display: none;">
+                <span class="user-email" id="user-email"></span>
+                <button class="btn btn-secondary" onclick="authAPI.logout()">로그아웃</button>
+            </div>
+            <div id="auth-links" style="display: flex; gap: 10px;">
+                <a href="auth.html" class="btn btn-primary">로그인</a>
+            </div>
+        </header>
+
+        <main>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h2 style="color: #667eea; font-size: 2.5em;">📖 나의 일기</h2>
+                <button class="btn btn-primary" onclick="openWriteModal()" id="write-btn" style="display: none;">
+                    ✏️ 일기 쓰기
+                </button>
+            </div>
+
+            <!-- 일기 목록 -->
+            <div id="diaries-list"></div>
+
+            <!-- 로그인 유도 메시지 -->
+            <div id="login-prompt" style="display: none; text-align: center; padding: 60px 20px;">
+                <h3 style="color: #667eea; font-size: 2em; margin-bottom: 20px;">
+                    일기를 작성하려면 로그인이 필요합니다
+                </h3>
+                <a href="auth.html" class="btn btn-primary" style="font-size: 1.2em; padding: 15px 30px;">
+                    로그인하기
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <!-- 일기 작성/수정 모달 -->
+    <div class="modal" id="diary-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">일기 쓰기</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form onsubmit="handleSubmit(event)">
+                <div class="form-group">
+                    <label for="diary-title">제목</label>
+                    <input type="text" id="diary-title" required placeholder="일기 제목을 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label for="diary-content">내용</label>
+                    <textarea id="diary-content" required placeholder="오늘 하루는 어땠나요?"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">저장</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()" style="flex: 1;">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let currentDiaryId = null;
+
+        // 페이지 로드 시
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (isLoggedIn()) {
+                document.getElementById('write-btn').style.display = 'block';
+                await loadMyDiaries();
+            } else {
+                document.getElementById('login-prompt').style.display = 'block';
+            }
+        });
+
+        // 내 일기 목록 로드
+        async function loadMyDiaries() {
+            try {
+                const diaries = await diaryAPI.getMyDiaries(0, 50);
+                const diariesList = document.getElementById('diaries-list');
+
+                if (diaries.length === 0) {
+                    diariesList.innerHTML = `
+                        <div style="text-align: center; padding: 60px 20px; color: #999;">
+                            <p style="font-size: 1.2em;">아직 작성한 일기가 없습니다.</p>
+                            <p>첫 일기를 작성해보세요!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                diariesList.innerHTML = diaries.map(diary => `
+                    <div class="card fade-in">
+                        <div class="card-title">${diary.title}</div>
+                        <div class="card-content">${diary.content}</div>
+                        <div class="card-meta">
+                            <span>${formatDate(diary.created_at)}</span>
+                            <div class="card-actions">
+                                <button class="btn btn-secondary" onclick="editDiary(${diary.id}, '${diary.title.replace(/'/g, "\\'")}', \`${diary.content.replace(/`/g, "\\`")}\`)">
+                                    수정
+                                </button>
+                                <button class="btn btn-danger" onclick="deleteDiary(${diary.id})">
+                                    삭제
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                showError('일기를 불러올 수 없습니다: ' + error.message);
+            }
+        }
+
+        // 일기 작성 모달 열기
+        function openWriteModal() {
+            currentDiaryId = null;
+            document.getElementById('modal-title').textContent = '일기 쓰기';
+            document.getElementById('diary-title').value = '';
+            document.getElementById('diary-content').value = '';
+            document.getElementById('diary-modal').classList.add('active');
+        }
+
+        // 일기 수정 모달 열기
+        function editDiary(id, title, content) {
+            currentDiaryId = id;
+            document.getElementById('modal-title').textContent = '일기 수정';
+            document.getElementById('diary-title').value = title;
+            document.getElementById('diary-content').value = content;
+            document.getElementById('diary-modal').classList.add('active');
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('diary-modal').classList.remove('active');
+        }
+
+        // 일기 저장/수정
+        async function handleSubmit(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('diary-title').value;
+            const content = document.getElementById('diary-content').value;
+
+            try {
+                if (currentDiaryId) {
+                    await diaryAPI.update(currentDiaryId, title, content);
+                    showSuccess('일기가 수정되었습니다.');
+                } else {
+                    await diaryAPI.create(title, content);
+                    showSuccess('일기가 저장되었습니다.');
+                }
+                
+                closeModal();
+                await loadMyDiaries();
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // 일기 삭제
+        async function deleteDiary(id) {
+            if (!confirm('정말 이 일기를 삭제하시겠습니까?')) {
+                return;
+            }
+
+            try {
+                await diaryAPI.delete(id);
+                showSuccess('일기가 삭제되었습니다.');
+                await loadMyDiaries();
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+    </script>
+</body>
+</html>
+

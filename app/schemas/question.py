@@ -1,11 +1,13 @@
 from pydantic import BaseModel
 
-class QuestionInSchema(BaseModel):
+# 질문 생성용 스키마
+class QuestionCreateInSchema(BaseModel):
     question: str
 
+# 질문 응답 스키마
 class QuestionOutSchema(BaseModel):
     id: int
     question: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True

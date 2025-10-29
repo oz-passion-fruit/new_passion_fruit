@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>질문 - Passion Fruit</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container fade-in">
+        <header>
+            <h1>🍊 Passion Fruit</h1>
+            <nav class="nav-links">
+                <a href="/">홈</a>
+                <a href="diary.html">일기</a>
+                <a href="question.html">질문</a>
+                <a href="quote.html">명언</a>
+            </nav>
+            <div class="user-info" id="user-info" style="display: none;">
+                <span class="user-email" id="user-email"></span>
+                <button class="btn btn-secondary" onclick="authAPI.logout()">로그아웃</button>
+            </div>
+            <div id="auth-links" style="display: flex; gap: 10px;">
+                <a href="auth.html" class="btn btn-primary">로그인</a>
+            </div>
+        </header>
+
+        <main>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h2 style="color: #667eea; font-size: 2.5em;">💭 오늘의 질문</h2>
+                <button class="btn btn-primary" onclick="loadRandomQuestion()">
+                    🔄 새로운 질문
+                </button>
+            </div>
+
+            <!-- 랜덤 질문 -->
+            <div id="random-question" class="loading">질문을 불러오는 중...</div>
+
+            <!-- 질문 목록 -->
+            <section style="margin-top: 60px;">
+                <h3 style="color: #667eea; font-size: 2em; margin-bottom: 20px;">모든 질문</h3>
+                <div style="text-align: right; margin-bottom: 20px;">
+                    <span id="question-count" style="color: #999;"></span>
+                </div>
+                <div id="questions-list" class="grid"></div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-secondary" onclick="loadMoreQuestions()" id="load-more-btn">
+                        더 보기
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let currentSkip = 0;
+        const limit = 12;
+
+        // 페이지 로드 시
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadRandomQuestion();
+            await loadQuestionCount();
+            await loadQuestions();
+        });
+
+        // 랜덤 질문 로드
+        async function loadRandomQuestion() {
+            try {
+                const question = await questionAPI.getRandom();
+                const randomQuestionDiv = document.getElementById('random-question');
+                randomQuestionDiv.innerHTML = `
+                    <div class="question-card fade-in">
+                        <div class="question-text">${question.question}</div>
+                        <div style="margin-top: 30px; text-align: center;">
+                            <p style="opacity: 0.9; font-size: 0.9em;">
+                                이 질문에 대해 일기를 작성해보세요
+                            </p>
+                            <a href="diary.html" class="btn" style="background: rgba(255,255,255,0.3); color: white; margin-top: 15px;">
+                                일기 쓰기 →
+                            </a>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('random-question').innerHTML = 
+                    '<p style="color: #999;">질문을 불러올 수 없습니다.</p>';
+            }
+        }
+
+        // 질문 개수 로드
+        async function loadQuestionCount() {
+            try {
+                const data = await questionAPI.getCount();
+                document.getElementById('question-count').textContent = 
+                    `총 ${data.total}개의 질문`;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // 질문 목록 로드
+        async function loadQuestions() {
+            try {
+                const questions = await questionAPI.getAll(currentSkip, limit);
+                const questionsList = document.getElementById('questions-list');
+
+                if (questions.length === 0 && currentSkip === 0) {
+                    questionsList.innerHTML = '<p style="color: #999;">아직 등록된 질문이 없습니다.</p>';
+                    return;
+                }
+
+                const questionsHTML = questions.map(question => `
+                    <div class="card fade-in">
+                        <div class="card-content" style="font-size: 1.1em; color: #333;">
+                            ${question.question}
+                        </div>
+                    </div>
+                `).join('');
+
+                if (currentSkip === 0) {
+                    questionsList.innerHTML = questionsHTML;
+                } else {
+                    questionsList.innerHTML += questionsHTML;
+                }
+
+                // 더 보기 버튼 표시/숨김
+                if (questions.length < limit) {
+                    document.getElementById('load-more-btn').style.display = 'none';
+                }
+            } catch (error) {
+                showError('질문을 불러올 수 없습니다: ' + error.message);
+            }
+        }
+
+        // 더 많은 질문 로드
+        async function loadMoreQuestions() {
+            currentSkip += limit;
+            await loadQuestions();
+        }
+    </script>
+</body>
+</html>
+

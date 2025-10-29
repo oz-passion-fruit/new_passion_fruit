@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - Passion Fruit</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container fade-in" style="max-width: 500px;">
+        <header style="text-align: center; border-bottom: none;">
+            <h1>🍊 Passion Fruit</h1>
+            <p style="color: #666; margin-top: 10px;">나의 감정 일기</p>
+        </header>
+
+        <main>
+            <!-- 탭 버튼 -->
+            <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+                <button class="btn btn-primary" id="login-tab" onclick="switchTab('login')" style="flex: 1;">
+                    로그인
+                </button>
+                <button class="btn btn-secondary" id="signup-tab" onclick="switchTab('signup')" style="flex: 1;">
+                    회원가입
+                </button>
+            </div>
+
+            <!-- 로그인 폼 -->
+            <div id="login-form">
+                <h2 style="color: #667eea; margin-bottom: 30px;">로그인</h2>
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="login-email">이메일</label>
+                        <input type="email" id="login-email" required placeholder="example@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">비밀번호</label>
+                        <input type="password" id="login-password" required placeholder="비밀번호를 입력하세요">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+                        로그인
+                    </button>
+                </form>
+            </div>
+
+            <!-- 회원가입 폼 -->
+            <div id="signup-form" style="display: none;">
+                <h2 style="color: #667eea; margin-bottom: 30px;">회원가입</h2>
+                <form onsubmit="handleSignup(event)">
+                    <div class="form-group">
+                        <label for="signup-email">이메일</label>
+                        <input type="email" id="signup-email" required placeholder="example@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-username">사용자 이름</label>
+                        <input type="text" id="signup-username" required placeholder="이름을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">비밀번호</label>
+                        <input type="password" id="signup-password" required placeholder="비밀번호를 입력하세요" minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password-confirm">비밀번호 확인</label>
+                        <input type="password" id="signup-password-confirm" required placeholder="비밀번호를 다시 입력하세요" minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+                        회원가입
+                    </button>
+                </form>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="/" style="color: #667eea; text-decoration: none;">
+                    ← 홈으로 돌아가기
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        // 이미 로그인되어 있으면 홈으로 리다이렉트
+        if (isLoggedIn()) {
+            window.location.href = '/';
+        }
+
+        // 탭 전환
+        function switchTab(tab) {
+            const loginTab = document.getElementById('login-tab');
+            const signupTab = document.getElementById('signup-tab');
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+
+            if (tab === 'login') {
+                loginTab.className = 'btn btn-primary';
+                signupTab.className = 'btn btn-secondary';
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+            } else {
+                loginTab.className = 'btn btn-secondary';
+                signupTab.className = 'btn btn-primary';
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+            }
+        }
+
+        // 로그인 처리
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                await authAPI.login(email, password);
+                showSuccess('로그인 성공!');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // 회원가입 처리
+        async function handleSignup(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('signup-email').value;
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+            const passwordConfirm = document.getElementById('signup-password-confirm').value;
+
+            // 비밀번호 확인
+            if (password !== passwordConfirm) {
+                showError('비밀번호가 일치하지 않습니다.');
+                return;
+            }
+
+            try {
+                await authAPI.signup(email, username, password);
+                showSuccess('회원가입 성공! 로그인해주세요.');
+                setTimeout(() => {
+                    switchTab('login');
+                    document.getElementById('login-email').value = email;
+                }, 1500);
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+    </script>
+</body>
+</html>
+
