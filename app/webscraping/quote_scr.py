@@ -11,7 +11,7 @@ base_url = "https://quotes.toscrape.com"
 all_quotes_data = []
 page = 1
 
-while len(all_quotes_data) < 100:
+while True: 
     url = f"{base_url}/page/{page}/" if page > 1 else base_url
     
     response = requests.get(url)
@@ -34,13 +34,10 @@ while len(all_quotes_data) < 100:
         print(f'내용 : {content}')
         print(f'작가 : {author}')
         print()
-        
-        if len(all_quotes_data) >= 100:
-            break
     
     page += 1
 
-print(f"총 {len(all_quotes_data)}개 명언 수집 완료.")
+print(f"모든 명언 수집 완료. 총 {len(all_quotes_data)}개.") 
 
 
 import asyncio
@@ -51,7 +48,7 @@ from app.schemas.quotes import QuoteOutSchema
 async def save_quotes_to_db():
     await init_db()
     for quote_data in all_quotes_data:
-        await Quote.create(**QuoteOutSchema.model_dump(quote_data)) # model_dump() 메서드를 사용하여 스키마에 맞게 데이터 변환
+        await Quote.create(**quote_data.model_dump()) # QuoteCreateInSchema 객체의 model_dump() 사용
     print("데이터베이스에 명언 저장 완료")
 
 if __name__ == "__main__":
