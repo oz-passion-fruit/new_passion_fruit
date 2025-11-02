@@ -1,5 +1,5 @@
 // API 기본 설정
-const API_BASE_URL = 'http://13.125.188.223:8000/api'; 
+const API_BASE_URL = 'http://54.180.112.132:8000/api'; 
 
 // 로컬 스토리지에서 토큰 가져오기
 function getToken() {
