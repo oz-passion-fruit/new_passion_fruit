@@ -10,8 +10,8 @@ router = APIRouter(prefix="/questions", tags=["질문"])
 
 @router.get("", response_model=List[QuestionOutSchema]) 
 async def get_questions(
-    skip: int = Query(0, ge=0, description="건너뛸 개수"),
-    limit: int = Query(10, ge=1, le=100, description="가져올 개수")
+    skip: int = Query(0, ge=0, description="건너뛸 개수"), # 0 = 기본값, ge=0 = 0 이상 음수 불가
+    limit: int = Query(10, ge=1, le=100, description="가져올 개수") # 기본값 10개를 가져옴, ge=1 = 1 이상, le=100 = 100 최대값
 ):
     """
     질문 목록 조회
@@ -38,7 +38,7 @@ async def get_random_question():
         )
     
     # 랜덤 인덱스 생성
-    random_offset = random.randint(0, total_count - 1)
+    random_offset = random.randint(0, total_count - 1) # 첫번째 질문부터 마지막 질문까지 랜덤하게 가져옴
     
     # 랜덤 질문 가져오기
     question = await Question.all().offset(random_offset).limit(1).first()
@@ -51,7 +51,7 @@ async def get_question(question_id: int):
     """
     특정 질문 조회
     """
-    question = await Question.get_or_none(id=question_id)
+    question = await Question.get_or_none(id=question_id) # 질문 고유 번호로 질문 조회, 없으면 None 반환
     
     if not question:
         raise HTTPException(

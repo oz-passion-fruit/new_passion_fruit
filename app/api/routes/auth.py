@@ -49,7 +49,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     - username: 이메일 (OAuth2 표준에서는 username 필드 사용)
     - password: 비밀번호
     """
-    # 이메일로 사용자 찾기 (OAuth2에서는 username 필드에 email을 넣음)
+    # 인자 값을 이메일로 사용자 찾기
     user = await User.filter(email=form_data.username).first()
     
     if not user or not verify_password(form_data.password, user.hashed_password):

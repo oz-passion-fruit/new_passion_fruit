@@ -10,8 +10,8 @@ router = APIRouter(prefix="/quotes", tags=["명언"])
 
 @router.get("", response_model=List[QuoteOutSchema])
 async def get_quotes(
-    skip: int = Query(0, ge=0, description="건너뛸 개수"),
-    limit: int = Query(10, ge=1, le=100, description="가져올 개수"),
+    skip: int = Query(0, ge=0, description="건너뛸 개수"), # 0 = 기본값, ge=0 = 0 이상 음수 불가
+    limit: int = Query(10, ge=1, le=100, description="가져올 개수"), # 기본값 10개를 가져옴, ge=1 = 1 이상, le=100 = 100 최대값
     author: Optional[str] = Query(None, description="작가 이름으로 필터링")
 ):
     """
@@ -20,9 +20,9 @@ async def get_quotes(
     - 작가별 필터링 가능
     """
     if author:
-        quotes = await Quote.filter(author__icontains=author).offset(skip).limit(limit).all()
+        quotes = await Quote.filter(author__icontains=author).offset(skip).limit(limit).all() # 작가 이름으로 필터링, 대소문자 구분 없이 검색
     else:
-        quotes = await Quote.all().offset(skip).limit(limit)
+        quotes = await Quote.all().offset(skip).limit(limit) # 모든 명언 조회, 건너뛰고 순서대로 가져옴
     
     return quotes
 
