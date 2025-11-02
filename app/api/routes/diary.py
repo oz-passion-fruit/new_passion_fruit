@@ -11,8 +11,8 @@ router = APIRouter(prefix="/diaries", tags=["일기"])
 
 @router.post("", response_model=DiaryOutSchema, status_code=status.HTTP_201_CREATED)
 async def create_diary(
-    diary_data: DiaryCreateInSchema,
-    current_user: User = Depends(get_current_active_user)
+    diary_data: DiaryCreateInSchema, 
+    current_user: User = Depends(get_current_active_user) # 로그인한 사용자만 작성 가능 jwt 토큰 검증
 ):
     """
     일기 작성
@@ -28,7 +28,7 @@ async def create_diary(
 
 @router.get("", response_model=List[DiaryOutSchema])
 async def get_my_diaries(
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_active_user), # 로그인한 사용자만 조회 가능 jwt 토큰 검증
     skip: int = Query(0, ge=0, description="건너뛸 개수"),
     limit: int = Query(10, ge=1, le=100, description="가져올 개수")
 ):
@@ -37,7 +37,7 @@ async def get_my_diaries(
     - 로그인한 사용자의 일기만 조회
     - 최신순으로 정렬
     """
-    diaries = await Diary.filter(user_id=current_user.id).order_by('-created_at').offset(skip).limit(limit).all()
+    diaries = await Diary.filter(user_id=current_user.id).order_by('-created_at').offset(skip).limit(limit).all() # 로그인한 사용자의 일기만 skip으로 건너뛸 갯수 limit 조회
     return diaries
 
 
@@ -51,7 +51,7 @@ async def get_all_diaries(
     - 인증 불필요
     - 최신순으로 정렬
     """
-    diaries = await Diary.all().order_by('-created_at').offset(skip).limit(limit)
+    diaries = await Diary.all().order_by('-created_at').offset(skip).limit(limit) # 모든 일기를 최신순으로 정렬하고 건너뛸 갯수 limit 조회
     return diaries
 
 
@@ -82,13 +82,13 @@ async def update_diary(
     """
     diary = await Diary.get_or_none(id=diary_id)
     
-    if not diary:
+    if not diary: # 일기가 없으면 404 오류
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="일기를 찾을 수 없습니다."
         )
     
-    if diary.user_id != current_user.id:
+    if diary.user_id != current_user.id: # 일기 작성자가 아니면 403 오류
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="자신의 일기만 수정할 수 있습니다."
@@ -97,7 +97,7 @@ async def update_diary(
     # 수정할 필드만 업데이트
     update_data = diary_data.dict(exclude_unset=True)
     if update_data:
-        await diary.update_from_dict(update_data).save()
+        await diary.update_from_dict(update_data).save() 
     
     return diary
 

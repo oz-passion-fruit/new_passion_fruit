@@ -28,6 +28,8 @@ if response.status_code == 200:
     
         if len(question_text) > 0 and question_text.endswith('?'): # 물음표로 끝나면 추가
             all_questions_data.append(QuestionCreateInSchema(question=question_text))
+            print(f'질문 : {question_text}')
+            print()
     
     print(f"\n총 {len(all_questions_data)}개의 질문을 수집했습니다.")
 else:

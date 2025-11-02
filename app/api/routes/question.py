@@ -8,7 +8,7 @@ from app.db.models.question import Question
 router = APIRouter(prefix="/questions", tags=["질문"])
 
 
-@router.get("", response_model=List[QuestionOutSchema])
+@router.get("", response_model=List[QuestionOutSchema]) 
 async def get_questions(
     skip: int = Query(0, ge=0, description="건너뛸 개수"),
     limit: int = Query(10, ge=1, le=100, description="가져올 개수")
